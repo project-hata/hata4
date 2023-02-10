@@ -105,7 +105,9 @@ instance : Repr Term where
   reprPrec := λ t x ↦ printTerm t
   -- eval (base a) _ _ := eval a
 
-#eval (runTerm Γ₀ (add (mkint 1) (mkint 2)))
+unsafe def code := (runTerm Γ₀ (add (mkint 1) (mkint 2)))
+ 
+#eval code
 
 -- axiom a : terminates 
 -- termination_by runTerm Γ t => sorry
