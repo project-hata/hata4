@@ -4,6 +4,8 @@ import Mathlib.Data.Vector.Basic
 import Mathlib.Data.Option.Basic
 import Hata.Conventions
 
+open Vector
+
 ----------------------------------------------
 -- ## Types
 --
@@ -148,7 +150,7 @@ def three : STTerm nil CN := add $$ two $$ one
 -- the idea is that the n'th church numeral describes n-times function concatenation
 -- so if we run the church numeral on the successor function (applied to zero),
 -- we reproduce the number in terms of our actual ℕ.
-def run (x : STTerm Vector.nil CN) := iTerm (Γ := Vector.nil) x () (λ x ↦ x + 1) 0
+def run (t : STTerm nil CN) := iTerm t () (λ x ↦ x + 1) 0
 
 -- test that 3*3 = 9
 #eval run (mul $$ three $$ three) 
