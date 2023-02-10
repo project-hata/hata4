@@ -32,6 +32,11 @@ abbrev SCtx := Vector SType
 -- ## Typed terms
 --
 
+--
+-- These are typed terms,
+-- a term `t : STTerm Γ τ` is a term `t` of type `τ` in the context `Γ`,
+-- usually this is denoted by `Γ ⊢ t : τ`.
+--
 inductive STTerm : SCtx n -> SType -> 𝒰 0 where
   | var : (i : Fin n) -> Γ.get i = τ -> STTerm (n := n) Γ τ
   | app : STTerm Γ (A ⇒ B) -> STTerm Γ A -> STTerm Γ B
@@ -42,6 +47,18 @@ open STTerm
 infixl:80 " $$ " => app
 prefix:60 "Λ " => lam
 notation:100 "V" i => var i rfl
+
+
+----------------------------------------------
+-- ## Interpretation into 𝒰
+--
+-- We interpret our STT terms into the underlying type theory of lean.
+-- For this we write interpretations functions for:
+--  - `iType` for types
+--  - `iCtx` for contexts
+--  - `iVar`, an interpretation for variable projections
+--  - `iTerm`, an interpretation function for terms,
+--             
 
 @[reducible]
 def iType : SType -> 𝒰 0
@@ -80,6 +97,11 @@ def iVar (i : Fin n) (Γ : SCtx n) (Ts : iCtx Γ) : (iType (Γ.get i)) :=
   
 end
 
+--
+-- Denoting interpretation by ⟦-⟧, the of `iTerm` type could be written as
+-- `Γ ⊢ τ → (⟦ Γ ⟧ → ⟦ τ ⟧)`, because a term of type `τ` in a context `Γ`,
+-- describes a function from `Γ` to `τ`.
+--
 def iTerm : (t : STTerm Γ τ) -> iCtx Γ -> iType τ
   | var i p => by
       intro Γ
@@ -93,29 +115,42 @@ def iTerm : (t : STTerm Γ τ) -> iCtx Γ -> iType τ
   | lam f => λ Γ a ↦ iTerm f (a , Γ)
   
 
-
 -- 
 -- church numerals
 --
+-- The following is the usual type of church numerals,
+-- it is irrelevant that the type inside is `NN`, it could
+-- be any type.
 def CN : SType := (NN ⇒ NN) ⇒ (NN ⇒ NN)
 
-example : 0 < 1 := Nat.zero_lt_succ _
-
+-- zero is the function which produces the identity
 def zero : STTerm nil CN := lam (lam (var 0 rfl))
+
+-- one is the identity
 def one : STTerm nil CN := Λ (V 0)
+
+-- add is more complicated
 def add : STTerm nil (CN ⇒ CN ⇒ CN) :=
   lam (lam (lam (lam (
     (app (app (var 3 rfl) (var 1 rfl))
     (app (app (var 2 rfl) (var 1 rfl))
        (var 0 rfl))
     )))))
+
+-- mul is actually simpler
 def mul : STTerm nil (CN ⇒ CN ⇒ CN) := Λ Λ Λ (var 2 rfl $$ (var 1 rfl $$ V 0))
 
+-- now we can define two and three
 def two : STTerm nil CN := add $$ one $$ one
 def three : STTerm nil CN := add $$ two $$ one
 
+-- by interpreting the church numeral with `iTerm`, we can run it as a function,
+-- the idea is that the n'th church numeral describes n-times function concatenation
+-- so if we run the church numeral on the successor function (applied to zero),
+-- we reproduce the number in terms of our actual ℕ.
 def run (x : STTerm Vector.nil CN) := iTerm (Γ := Vector.nil) x () (λ x ↦ x + 1) 0
 
+-- test that 3*3 = 9
 #eval run (mul $$ three $$ three) 
 
 
