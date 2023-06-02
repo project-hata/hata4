@@ -49,6 +49,9 @@ open STTerm
 infixl:80 " $$ " => app
 prefix:60 "Λ " => lam
 notation:100 "V" i => var i rfl
+notation:50 Γ "⊢" τ => STTerm Γ τ
+
+
 
 
 ----------------------------------------------
@@ -76,6 +79,8 @@ def iCtx' : List SType -> 𝒰 0
 @[reducible]
 def iCtx (Γ : SCtx n) : 𝒰 0 := iCtx' Γ.val
 
+notation:100 "⟦" A "⟧" => iType A
+notation:100 "⟦" A "⟧" => iCtx A
 
 
 section
@@ -85,18 +90,18 @@ open Nat
 def iVar (i : Fin n) (Γ : SCtx n) (Ts : iCtx Γ) : (iType (Γ.get i)) :=
   match n with
   | 0 => match Γ with
-         | ⟨ [] , p ⟩ => match i with
+         | ⟨ [] , _p ⟩ => match i with
                         | ⟨ i , p ⟩ => nomatch p
   | (succ n) => match Γ with
                 | ⟨ (a :: as) , q ⟩ =>
                   let (T , Ts) := Ts
                   match i with
-                  | ⟨ 0 , p ⟩ => T
+                  | ⟨ 0 , _p ⟩ => T
                   | ⟨ succ i , p ⟩ => by
                       simp [*]
                       have p' : i < n := lt_of_succ_lt_succ p
                       exact iVar ⟨ i , p' ⟩ ⟨ as , (succ.inj q) ⟩ Ts
-  
+
 end
 
 --
@@ -104,7 +109,7 @@ end
 -- `Γ ⊢ τ → (⟦ Γ ⟧ → ⟦ τ ⟧)`, because a term of type `τ` in a context `Γ`,
 -- describes a function from `Γ` to `τ`.
 --
-def iTerm : (t : STTerm Γ τ) -> iCtx Γ -> iType τ
+def iTerm : (Γ ⊢ τ) -> ⟦ Γ ⟧ -> ⟦ τ ⟧ 
   | var i p => by
       intro Γ
       have res := iVar i _ Γ
@@ -116,6 +121,7 @@ def iTerm : (t : STTerm Γ τ) -> iCtx Γ -> iType τ
       λ Γ ↦ (f' Γ) (t' Γ)
   | lam f => λ Γ a ↦ iTerm f (a , Γ)
   
+notation:100 "⟦" A "⟧" => iTerm A
 
 -- 
 -- church numerals
